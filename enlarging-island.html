@@ -8,7 +8,7 @@ body {
     margin:0;
     font-family:"JetBrains Mono", monospace;
     background:white;
-    height:300vh;
+    height:500vh;
     overflow-x:hidden;
     transition: background 0.5s ease;
 }
@@ -56,31 +56,39 @@ const island = document.getElementById("island");
 const content = island.querySelector(".island-content");
 const threshold = 800;
 const maxScroll = 2000;
+const holdAfterExpand = 90;
+const returnDuration = maxScroll - threshold;
+const returnStart = maxScroll + holdAfterExpand;
+const returnEnd = returnStart + returnDuration;
+const bottomIslandCenterOffset = 70;
 
 function lerp(a,b,t){return a+(b-a)*t;}
 function cubicEase(t){return t*t*(3-2*t);}
 
 window.addEventListener("scroll", ()=>{
     const scrollY = window.scrollY;
-    let t;
-    if(scrollY <= threshold) t=0;
-    else if(scrollY >= maxScroll) t=1;
-    else t=(scrollY - threshold)/(maxScroll - threshold);
-    const eased = cubicEase(t);
+    const expandProgress = Math.min(Math.max((scrollY - threshold) / (maxScroll - threshold), 0), 1);
+    const returnProgress = Math.min(Math.max((scrollY - returnStart) / (returnEnd - returnStart), 0), 1);
 
-    const width = lerp(300, window.innerWidth, eased);
-    const height = lerp(100, window.innerHeight, eased);
-    const radius = lerp(60, 0, eased);
+    const easedExpand = cubicEase(expandProgress);
+    const easedReturn = cubicEase(returnProgress);
+    const phase = easedExpand * (1 - easedReturn);
+
+    const width = lerp(300, window.innerWidth, phase);
+    const height = lerp(100, window.innerHeight, phase);
+    const radius = lerp(60, 0, phase);
+    const topPosition = lerp(window.innerHeight / 2, window.innerHeight - bottomIslandCenterOffset, easedReturn);
 
     island.style.width = width+"px";
     island.style.height = height+"px";
     island.style.borderRadius = radius+"px";
+    island.style.top = topPosition + "px";
     island.style.transform = "translate(-50%, -50%) scale(1)";
 
-    const fontSize = lerp(1,3,eased);
+    const fontSize = lerp(1,3,phase);
     content.style.fontSize = fontSize+"em";
 
-    const bgVal = Math.floor(lerp(255,0,eased));
+    const bgVal = Math.floor(lerp(255,0,phase));
     document.body.style.background = `rgb(${bgVal},${bgVal},${bgVal})`;
 });
 
