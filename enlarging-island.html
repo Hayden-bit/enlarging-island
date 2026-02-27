@@ -8,7 +8,7 @@ body {
     margin:0;
     font-family:"JetBrains Mono", monospace;
     background:white;
-    height:1400vh;
+    height:500vh;
     overflow-x:hidden;
     transition: background 0.5s ease;
 }
@@ -56,11 +56,11 @@ const island = document.getElementById("island");
 const content = island.querySelector(".island-content");
 const threshold = 800;
 const maxScroll = 2000;
-const holdAfterExpand = 10000;
+const holdAfterExpand = 90;
 const returnDuration = maxScroll - threshold;
 const returnStart = maxScroll + holdAfterExpand;
 const returnEnd = returnStart + returnDuration;
-const bottomMargin = 20;
+const bottomIslandCenterOffset = 70;
 
 function lerp(a,b,t){return a+(b-a)*t;}
 function cubicEase(t){return t*t*(3-2*t);}
@@ -77,8 +77,7 @@ window.addEventListener("scroll", ()=>{
     const width = lerp(300, window.innerWidth, phase);
     const height = lerp(100, window.innerHeight, phase);
     const radius = lerp(60, 0, phase);
-    const bottomAnchoredCenter = window.innerHeight - bottomMargin - (height / 2);
-    const topPosition = lerp(window.innerHeight / 2, bottomAnchoredCenter, easedReturn);
+    const topPosition = lerp(window.innerHeight / 2, window.innerHeight - bottomIslandCenterOffset, easedReturn);
 
     island.style.width = width+"px";
     island.style.height = height+"px";
