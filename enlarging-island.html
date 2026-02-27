@@ -8,7 +8,7 @@ body {
     margin:0;
     font-family:"JetBrains Mono", monospace;
     background:white;
-    height:300vh;
+    height:1400vh;
     overflow-x:hidden;
     transition: background 0.5s ease;
 }
@@ -56,31 +56,51 @@ const island = document.getElementById("island");
 const content = island.querySelector(".island-content");
 const threshold = 800;
 const maxScroll = 2000;
+const holdDurationMs = 6000;
+const returnDuration = maxScroll - threshold;
+const bottomMargin = 20;
+let holdStartTime = null;
 
 function lerp(a,b,t){return a+(b-a)*t;}
 function cubicEase(t){return t*t*(3-2*t);}
 
 window.addEventListener("scroll", ()=>{
     const scrollY = window.scrollY;
-    let t;
-    if(scrollY <= threshold) t=0;
-    else if(scrollY >= maxScroll) t=1;
-    else t=(scrollY - threshold)/(maxScroll - threshold);
-    const eased = cubicEase(t);
+    const now = performance.now();
+    const expandProgress = Math.min(Math.max((scrollY - threshold) / (maxScroll - threshold), 0), 1);
 
-    const width = lerp(300, window.innerWidth, eased);
-    const height = lerp(100, window.innerHeight, eased);
-    const radius = lerp(60, 0, eased);
+    if (expandProgress >= 1 && holdStartTime === null) {
+        holdStartTime = now;
+    } else if (expandProgress < 1) {
+        holdStartTime = null;
+    }
+
+    const holdElapsed = holdStartTime === null ? 0 : now - holdStartTime;
+    const holdComplete = holdElapsed >= holdDurationMs;
+    const returnProgressRaw = holdComplete
+        ? Math.min(Math.max((scrollY - maxScroll) / returnDuration, 0), 1)
+        : 0;
+
+    const easedExpand = cubicEase(expandProgress);
+    const easedReturn = cubicEase(returnProgressRaw);
+    const phase = easedExpand * (1 - easedReturn);
+
+    const width = lerp(300, window.innerWidth, phase);
+    const height = lerp(100, window.innerHeight, phase);
+    const radius = lerp(60, 0, phase);
+    const bottomAnchoredCenter = window.innerHeight - bottomMargin - (height / 2);
+    const topPosition = lerp(window.innerHeight / 2, bottomAnchoredCenter, easedReturn);
 
     island.style.width = width+"px";
     island.style.height = height+"px";
     island.style.borderRadius = radius+"px";
+    island.style.top = topPosition + "px";
     island.style.transform = "translate(-50%, -50%) scale(1)";
 
-    const fontSize = lerp(1,3,eased);
+    const fontSize = lerp(1,3,phase);
     content.style.fontSize = fontSize+"em";
 
-    const bgVal = Math.floor(lerp(255,0,eased));
+    const bgVal = Math.floor(lerp(255,0,phase));
     document.body.style.background = `rgb(${bgVal},${bgVal},${bgVal})`;
 });
 
